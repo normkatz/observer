@@ -8,3 +8,5 @@ My server is running on an EC2 on AWS with a Maria DB hosted on RDS.
 I'm using Claude Code to help me write and debug this app.
 
 If you know of other open source apps that do something similar, please let me know so I can try them out and avoid reinventing the wheel.  Thanks for checking out observer.
+
+Hello from codex
