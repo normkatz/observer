@@ -7,7 +7,9 @@ try {
   db = await openDatabase();
   console.log(db.identity);
   if (command === 'check') {
-    console.table(await db.pool.query('SELECT id, metric, active FROM metrics'));
+    const tables = await db.pool.query("SELECT TABLE_NAME, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME");
+    console.table(tables);
+    console.log('Database connection and identity verified; no changes made.');
   } else if (command === 'status') {
     // Status is read-only, including before migration infrastructure exists.
     const rows = await db.pool.query(`SELECT TABLE_NAME FROM information_schema.TABLES

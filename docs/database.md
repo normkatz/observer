@@ -1,6 +1,6 @@
 # Local database development
 
-This milestone supports only the dedicated local MariaDB 10.6 instance:
+The default local mode uses the dedicated MariaDB 10.6 instance:
 
 - Socket: `/opt/homebrew/var/mariadb/mariadb.sock`
 - Port: 3308 (verified on the server, not used to connect)
@@ -10,8 +10,7 @@ This milestone supports only the dedicated local MariaDB 10.6 instance:
 
 No password, SSH tunnel, or production login-path is used. The Node connector
 supports this socket authentication directly. TCP settings and unexpected
-server identities are rejected before migration writes. Production credential
-retrieval and deployment are future work; do not bypass the local guard.
+server identities are rejected before migration writes. Production uses a separate explicit RDS mode; see [production connection setup](production.md). Do not bypass the local guard.
 
 ## Commands
 
@@ -19,7 +18,7 @@ Use Node 26.4.0. Run `npm ci` after checkout, and copy `.env.example` to `.env`
 if local overrides are needed. No secrets belong in either file. Package
 lifecycle scripts are disabled in `.npmrc`; review any dependency requiring them.
 
-- `npm run db:check`: verify identity and read metrics.
+- `npm run db:check`: verify identity and list table collations.
 - `npm run db:status`: read applied migration history (does not create tables).
 - `npm run db:migrate`: explicitly apply pending migrations.
 - `npm test`: configuration and destination guard tests.
