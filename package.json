@@ -7,13 +7,13 @@
     "node": "26.4.0"
   },
   "scripts": {
-    "db:check": "node --env-file-if-exists=.env src/storage/cli.js check",
-    "db:status": "node --env-file-if-exists=.env src/storage/cli.js status",
-    "db:migrate": "node --env-file-if-exists=.env src/storage/cli.js up",
+    "db:check": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js check",
+    "db:status": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js status",
+    "db:migrate": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js up",
     "test": "node --test test/*.test.js",
-    "test:integration": "node --env-file-if-exists=.env --test test/integration/*.test.js",
-    "start": "node --env-file-if-exists=.env src/run.js",
-    "report": "node --env-file-if-exists=.env src/report.js",
+    "test:integration": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env --test test/integration/*.test.js",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/run.js",
+    "report": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/report.js",
     "burst": "node scripts/burst.mjs"
   },
   "dependencies": {
