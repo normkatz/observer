@@ -47,3 +47,17 @@ test('RDS preparation fetches exact secret and requires verified TLS', async () 
   await assert.rejects(rdsCredentials(env, { send: async () => { throw new Error('PASSWORD_SENTINEL'); } }),
     error => !error.message.includes('PASSWORD_SENTINEL'));
 });
+
+test('connection diagnostics retain nested known codes without leaking raw error contents', async () => {
+  const { databaseFailure } = await import('../src/storage/database-error.js');
+  const error = Object.assign(new Error('PASSWORD_SENTINEL'), {
+    code: 'ER_GET_CONNECTION_TIMEOUT', cause: Object.assign(new Error('PASSWORD_SENTINEL'), { code: 'ER_ACCESS_DENIED_ERROR' })
+  });
+  const message = databaseFailure(error, 'database connection').message;
+  assert.match(message, /ER_ACCESS_DENIED_ERROR/);
+  assert.match(message, /database connection/);
+  assert.ok(!message.includes('PASSWORD_SENTINEL'));
+  error.cause.cause = error;
+  assert.doesNotThrow(() => databaseFailure(error, 'database connection'));
+  assert.ok(!databaseFailure({ code: 'PASSWORD_SENTINEL', message: 'PASSWORD_SENTINEL' }, 'TLS verification').message.includes('PASSWORD_SENTINEL'));
+});

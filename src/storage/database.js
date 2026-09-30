@@ -1,6 +1,7 @@
 import mariadb from 'mariadb';
 import { databaseConfig, assertLocalServer, assertRdsServer } from '../config/database.js';
 
+import { databaseFailure } from './database-error.js';
 import { prepareRdsConfig } from './secret.js';
 
 export async function openDatabase(env = process.env) {
@@ -8,13 +9,17 @@ export async function openDatabase(env = process.env) {
   const production = env.DB_MODE === 'rds';
   if (production) config = await prepareRdsConfig(config, env);
   const pool = mariadb.createPool(config);
+  let stage = 'database connection (secret retrieval succeeded)';
   try {
     const connection = await pool.getConnection();
     try {
+      stage = 'server identity query';
       const [identity] = await connection.query(`SELECT VERSION() AS version, @@port AS port,
         @@datadir AS data_directory, DATABASE() AS schema_name, CURRENT_USER() AS account`);
       if (production) {
+        stage = 'identity validation: MariaDB 10.6, observer schema, configured port';
         assertRdsServer(identity, config);
+        stage = 'TLS session verification';
         const rows = await connection.query("SHOW SESSION STATUS LIKE 'Ssl_cipher'");
         if (!rows[0]?.Value) throw new Error('RDS connection requires TLS.');
         identity.tls = true;
@@ -24,7 +29,7 @@ export async function openDatabase(env = process.env) {
   } catch (error) {
     await pool.end();
     if (production) {
-      throw new Error('RDS connection or identity check failed. Check network/security groups, TLS CA, credentials, and MariaDB 10.6 observer schema.');
+      throw databaseFailure(error, stage);
     }
     throw error;
   }
