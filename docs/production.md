@@ -2,7 +2,7 @@
 
 Use Node 26.4.0 and `npm ci` in `/opt/observer` after pulling this update.
 Do not copy the Mac's .env to production. Use `deploy/observer.env.example`
-as the list of nonsecret settings in `/etc/observer/observer.env`.
+as the list of nonsecret settings in `/etc/observer/.env`.
 Preserve any values you have already entered. Remove DB_SOCKET_PATH and DB_USER;
 username and password come exclusively from the secret. DB_ARN is unused.
 For runtime operation, `DB_SECRET_ARN` points to the least-privileged observer
@@ -27,12 +27,12 @@ sudo curl --fail --show-error --silent --location \
   -o /etc/observer/rds-ca.pem
 ```
 
-Edit configuration with `sudo vim /etc/observer/observer.env`. Then run as ubuntu:
+Edit configuration with `sudo vim /etc/observer/.env`. Then run as ubuntu:
 
 ```bash
 cd /opt/observer
-node --env-file=/etc/observer/observer.env src/storage/cli.js check
-node --env-file=/etc/observer/observer.env src/storage/cli.js status
+npm run db:check
+npm run db:status
 ```
 
 These commands make no database changes. Check verifies secret retrieval,
@@ -55,12 +55,12 @@ No migrations run during check or service startup.
 After confirming the baseline and backup:
 
 ```bash
-node --env-file=/etc/observer/observer.env src/storage/cli.js up
-node --env-file=/etc/observer/observer.env src/storage/cli.js status
+npm run db:migrate
+npm run db:status
 ```
 
-If using a project `.env` instead, the equivalent commands are `npm run db:check`,
-`npm run db:status`, and `npm run db:migrate`. Keep that file untracked. Grant
+These npm commands load a project `.env` followed by `/etc/observer/.env` if present.
+Keep configuration files untracked. Grant
 the migration secret to the EC2 role only while migrations are needed, then
 remove that resource from the IAM policy if migrations are controlled manually.
 Do not use both configuration files with conflicting values. Exported shell
@@ -71,6 +71,7 @@ retrying. Do not sync local test data or migration history into production.
 Restrict database grants to observer.*; separate migration DDL permissions from
 the runtime account when deploying the service. Never use the RDS admin account.
 
-This release prepares connectivity only. Keep the Apache observer disabled until
-production thresholds, writable directories, and a systemd service are configured.
-Only Apache collection is implemented; email delivery remains disabled.
+Apache, CPU, processes and memory collection are implemented; see
+[system observers](system-observers.md) for the new migration and enable switches.
+Production currently runs in the foreground as ubuntu. A systemd unit and email
+delivery remain separate deployment work.

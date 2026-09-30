@@ -7,6 +7,7 @@ import { saveSample, cleanup } from '../../src/storage/apache.js';
 import { apacheThresholds } from '../../src/config/observer.js';
 
 test('Apache incidents persist across reconnects, deduplicate retries and retain evidence', async () => {
+  assert.notEqual(process.env.DB_MODE, 'rds', 'Integration tests are local only');
   const admin = await openDatabase();
   const name = `observer_test_${randomBytes(8).toString('hex')}`;
   let db;

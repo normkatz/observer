@@ -46,9 +46,10 @@ command. Repair through a reviewed plan, preserving data. Take a backup first.
 ## Apache milestone
 
 Migration 003 adds observation retry identifiers and persistent detector state.
-The Apache observer now implements sampling, thresholds, enable switches,
-retention, and summaries; see [Apache testing](apache-testing.md). Other collectors
-and email delivery remain unimplemented. Nonsecret settings are documented in
+The Apache observer implements sampling, thresholds, enable switches,
+retention, and summaries; see [Apache testing](apache-testing.md). Migration 004
+adds Linux CPU, process and memory metrics; see [system observers](system-observers.md).
+Email delivery remains unimplemented. Nonsecret settings are documented in
 .env.example. Routine samples default to a 15-second interval and one-hour
 retention; incident retention is seven days. An observer will require both its
 .env switch and metrics.active to be enabled. WordPress and CiviCRM will be

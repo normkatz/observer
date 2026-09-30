@@ -25,12 +25,14 @@ npm test
 npm run test:integration
 ```
 
-Database commands currently target only local MariaDB through Unix-socket
-authentication. Production access is deliberately unavailable in this milestone.
+Database commands support local MariaDB socket authentication and an explicit
+RDS mode using EC2-role access to Secrets Manager and verified TLS.
 See [database development](docs/database.md) for migration behavior and tests.
 The Apache access-log observer is now implemented and tested locally. See
 [Apache testing](docs/apache-testing.md) to run it and generate a bounded burst
-from EC2. CPU/memory collectors and SES email delivery remain future work.
+from EC2. Linux CPU, process, and memory collectors are implemented; see
+[system observers](docs/system-observers.md) and [production setup](docs/production.md).
+WordPress/CiviCRM log collectors, query monitoring, and SES delivery remain future work.
 
 ```bash
 npm start

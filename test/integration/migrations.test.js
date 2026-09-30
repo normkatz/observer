@@ -6,6 +6,7 @@ import { withMigrator } from '../../src/storage/migrations.js';
 import { up as baseline } from '../../migrations/001-metrics-baseline.js';
 
 async function isolatedDatabase(callback) {
+  assert.notEqual(process.env.DB_MODE, 'rds', 'Integration tests are local only');
   const admin = await openDatabase(); // Guard the server identity before creating anything.
   const name = `observer_test_${randomBytes(8).toString('hex')}`;
   let db;

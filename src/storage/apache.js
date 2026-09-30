@@ -1,4 +1,5 @@
 import { advance, summary } from '../incidents/apache.js';
+import * as systemDetector from '../incidents/system.js';
 const decode = value => typeof value === 'string' ? JSON.parse(value) : value;
 export async function loadApacheMetric(pool) {
   const rows = await pool.query("SELECT * FROM metrics WHERE metric='apache_access_log'");
@@ -6,6 +7,7 @@ export async function loadApacheMetric(pool) {
   return { ...rows[0], thresholds: rows[0].thresholds === null ? {} : decode(rows[0].thresholds) };
 }
 export async function saveSample(pool, item) {
+  const detector = ['cpu', 'processes', 'memory'].includes(item.kind) ? systemDetector : { advance, summary };
   const db = await pool.getConnection();
   const observedAt = new Date(item.observedAt);
   const sample = item.sample;
@@ -22,11 +24,11 @@ export async function saveSample(pool, item) {
     if (before.runId !== item.runId || before.sequence !== item.sequence - 1 || before.thresholds !== JSON.stringify(item.thresholds)) {
       before = { ...before, high: 0, low: 0 };
     }
-    const { state, event } = advance(before, sample, item.thresholds);
+    const { state, event } = detector.advance(before, sample, item.thresholds);
     Object.assign(state, { runId: item.runId, sequence: item.sequence, thresholds: JSON.stringify(item.thresholds), lastObservedAt: item.observedAt });
     let text;
     if (event === 'start') {
-      text = summary(state, sample);
+      text = detector.summary(state, sample);
       const created = await db.query(`INSERT INTO incidents(host,started_at,status,severity,summary)
         VALUES (?,?,'open','warning',?)`, [item.host, observedAt, text]);
       state.incidentId = String(created.insertId);
@@ -41,7 +43,7 @@ export async function saveSample(pool, item) {
     if (incidentId) {
       await db.query('INSERT INTO incident_evidence(incident_id,metric_id,observed_at,payload) VALUES (?,?,?,?)',
         [incidentId, item.metricId, observedAt, JSON.stringify(sample)]);
-      text = summary(state, sample, event === 'recovery');
+      text = detector.summary(state, sample, event === 'recovery');
       if (event === 'recovery') {
         await db.query("UPDATE incidents SET status='resolved',recovered_at=?,summary=? WHERE id=?", [observedAt, text, incidentId]);
         state.incidentId = null; state.high = 0; state.low = 0; state.peakRate = 0;
@@ -49,7 +51,7 @@ export async function saveSample(pool, item) {
     }
     await db.query('UPDATE detector_states SET state=? WHERE metric_id=? AND host=?', [JSON.stringify(state), item.metricId, item.host]);
     await db.commit();
-    return event ? { event, incidentId, summary: text } : null;
+    return event ? { event, incidentId, summary: text, metric: item.kind || 'apache_access_log' } : null;
   } catch (error) {
     await db.rollback().catch(() => {});
     throw error;
