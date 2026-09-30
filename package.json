@@ -1,0 +1,26 @@
+{
+  "name": "observer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "26.4.0"
+  },
+  "scripts": {
+    "db:check": "node --env-file-if-exists=.env src/storage/cli.js check",
+    "db:status": "node --env-file-if-exists=.env src/storage/cli.js status",
+    "db:migrate": "node --env-file-if-exists=.env src/storage/cli.js up",
+    "test": "node --test test/*.test.js",
+    "test:integration": "node --env-file-if-exists=.env --test test/integration/*.test.js",
+    "start": "node --env-file-if-exists=.env src/run.js",
+    "report": "node --env-file-if-exists=.env src/report.js",
+    "burst": "node scripts/burst.mjs"
+  },
+  "dependencies": {
+    "mariadb": "3.5.4",
+    "pino": "10.3.1",
+    "proper-lockfile": "4.1.2",
+    "rotating-file-stream": "3.2.10",
+    "umzug": "3.8.3"
+  }
+}

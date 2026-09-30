@@ -1,0 +1,22 @@
+import { openDatabase } from './database.js';
+import { withMigrator } from './migrations.js';
+const command = process.argv[2];
+let db;
+try {
+  if (!['check', 'status', 'up'].includes(command)) throw new Error('Expected check, status, or up.');
+  db = await openDatabase();
+  console.log(db.identity);
+  if (command === 'check') {
+    console.table(await db.pool.query('SELECT id, metric, active FROM metrics'));
+  } else if (command === 'status') {
+    // Status is read-only, including before migration infrastructure exists.
+    const rows = await db.pool.query(`SELECT TABLE_NAME FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schema_migrations'`);
+    console.table(rows.length ? await db.pool.query('SELECT name, applied_at FROM schema_migrations ORDER BY name') : []);
+  } else {
+    await withMigrator(db.pool, db.database, migrator => migrator.up());
+  }
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+} finally { if (db) await db.pool.end(); }
