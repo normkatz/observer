@@ -5,6 +5,10 @@ Do not copy the Mac's .env to production. Use `deploy/observer.env.example`
 as the list of nonsecret settings in `/etc/observer/observer.env`.
 Preserve any values you have already entered. Remove DB_SOCKET_PATH and DB_USER;
 username and password come exclusively from the secret. DB_ARN is unused.
+For runtime operation, `DB_SECRET_ARN` points to the least-privileged observer
+account. Set `DB_MIGRATION_SECRET_ARN` to a separate migration account secret;
+the `up` command selects it automatically, while `check` and `status` continue
+using the runtime account.
 
 The database must be MariaDB 10.6 with an existing `observer` schema. EC2 must
 reach its RDS endpoint on port 3306 and Secrets Manager over HTTPS (through an
@@ -56,7 +60,9 @@ node --env-file=/etc/observer/observer.env src/storage/cli.js status
 ```
 
 If using a project `.env` instead, the equivalent commands are `npm run db:check`,
-`npm run db:status`, and `npm run db:migrate`. Keep that file untracked.
+`npm run db:status`, and `npm run db:migrate`. Keep that file untracked. Grant
+the migration secret to the EC2 role only while migrations are needed, then
+remove that resource from the IAM policy if migrations are controlled manually.
 Do not use both configuration files with conflicting values. Exported shell
 variables take precedence over env-file values.
 

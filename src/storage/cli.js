@@ -4,7 +4,10 @@ const command = process.argv[2];
 let db;
 try {
   if (!['check', 'status', 'up'].includes(command)) throw new Error('Expected check, status, or up.');
-  db = await openDatabase();
+  const env = command === 'up' && process.env.DB_MIGRATION_SECRET_ARN
+    ? { ...process.env, DB_SECRET_ARN: process.env.DB_MIGRATION_SECRET_ARN }
+    : process.env;
+  db = await openDatabase(env);
   console.log(db.identity);
   if (command === 'check') {
     const tables = await db.pool.query("SELECT TABLE_NAME, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME");
