@@ -9,8 +9,6 @@ I'm using Codex and Claude Code to help me write and debug this app.
 
 If you know of other open source apps that do something similar, please let me know so I can try them out and avoid reinventing the wheel.  Thanks for checking out observer.
 
-Hello from codex
-
 ## Development foundation
 
 Use **Node.js 26.4.0** and npm:
