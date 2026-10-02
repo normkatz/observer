@@ -11,7 +11,7 @@ export function advance(previous, sample, thresholds) {
   if (!state.incidentId && !high) state.peakRate = 0;
   if ((high || state.incidentId) && value >= state.peakRate) {
     state.peakRate = value;
-    state.peakProcesses = sample.kind === 'memory'
+    state.peakProcesses = (sample.metric ?? sample.kind) === 'memory'
       ? sample.processSnapshot?.topMemory ?? []
       : sample.processSnapshot?.topCpu ?? sample.topCpu ?? [];
   }
@@ -20,7 +20,7 @@ export function advance(previous, sample, thresholds) {
   return { state, event: null };
 }
 export function summary(state, sample, recovered = false) {
-  const kind = sample.kind;
+  const kind = sample.metric ?? sample.kind;
   const label = { cpu: 'Host CPU utilization', memory: 'Memory use (based on available RAM)', processes: 'Largest process CPU share of host capacity' }[kind];
   const top = state.peakProcesses?.slice(0, 3).map(p => `${p.command} PID ${p.pid} (` +
     (kind === 'memory' ? `${Math.round(p.rssBytes / 1048576)} MiB RSS` : `${p.cpuPercent}% host CPU`) + ')').join(', ');

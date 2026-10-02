@@ -11,6 +11,7 @@ import { ApacheObserver } from './observers/apache.js';
 import { loadApacheMetric, saveSample, cleanup } from './storage/apache.js';
 import { PendingSamples } from './storage/pending.js';
 import { SystemRuntime } from './system-runtime.js';
+import { normalizeSample, logSample } from './samples.js';
 
 let logger = pino({ level: 'info', base: undefined });
 let db, release, observer, logOutput;
@@ -79,12 +80,13 @@ try {
         sample = { status: 'unavailable', complete: false, requestsPerSecond: null, errorCode: error.code || 'READ_ERROR' };
         logger.warn({ code: sample.errorCode }, 'Apache log sample unavailable');
       }
+      sample = normalizeSample('apache_access_log', sample);
       sample.settingsCached = !settingsKnown;
       sample.processSnapshot = system.processSnapshot();
-      const dropped = await queue.add({ key: crypto.randomUUID(), runId, sequence: ++apacheSequence, metricId: metric.id,
+      const dropped = await queue.add({ key: crypto.randomUUID(), metric: sample.metric, runId, sequence: ++apacheSequence, metricId: metric.id,
         host: config.host, observedAt: new Date().toISOString(), sample, thresholds });
       if (dropped) logger.warn({ dropped }, 'Pending sample limit reached; oldest samples discarded');
-      logger.info({ requests: sample.requests, rate: sample.requestsPerSecond, complete: sample.complete }, 'Apache sample');
+      logSample(logger, sample);
     }
     try {
       await queue.flush(item => saveSample(db.pool, item), event => logger.warn(event, 'Observer incident'));

@@ -1,5 +1,6 @@
 import { advance, summary } from '../incidents/apache.js';
 import * as systemDetector from '../incidents/system.js';
+import { normalizeSample } from '../samples.js';
 const decode = value => typeof value === 'string' ? JSON.parse(value) : value;
 export async function loadApacheMetric(pool) {
   const rows = await pool.query("SELECT * FROM metrics WHERE metric='apache_access_log'");
@@ -7,10 +8,12 @@ export async function loadApacheMetric(pool) {
   return { ...rows[0], thresholds: rows[0].thresholds === null ? {} : decode(rows[0].thresholds) };
 }
 export async function saveSample(pool, item) {
-  const detector = ['cpu', 'processes', 'memory'].includes(item.kind) ? systemDetector : { advance, summary };
+  // Accept queued samples from before the common metric field was introduced.
+  const metric = item.metric || item.kind || item.sample.metric || 'apache_access_log';
+  const detector = ['cpu', 'processes', 'memory'].includes(metric) ? systemDetector : { advance, summary };
+  const sample = normalizeSample(metric, item.sample);
   const db = await pool.getConnection();
   const observedAt = new Date(item.observedAt);
-  const sample = item.sample;
   try {
     await db.beginTransaction();
     const previous = await db.query('SELECT id FROM observations WHERE sample_key=?', [item.key]);
@@ -51,7 +54,7 @@ export async function saveSample(pool, item) {
     }
     await db.query('UPDATE detector_states SET state=? WHERE metric_id=? AND host=?', [JSON.stringify(state), item.metricId, item.host]);
     await db.commit();
-    return event ? { event, incidentId, summary: text, metric: item.kind || 'apache_access_log' } : null;
+    return event ? { event, incidentId, summary: text, metric } : null;
   } catch (error) {
     await db.rollback().catch(() => {});
     throw error;

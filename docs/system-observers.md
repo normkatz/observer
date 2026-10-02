@@ -121,6 +121,14 @@ queue handles DB outages; 960 samples approximates one hour for four collectors
 at 15 seconds, subject to its four-MiB byte cap. Dropped samples are logged.
 
 Incident summaries are available via `npm run report` and operational JSON logs.
+All new sample payloads start with `metric`, `status`, and `complete`. Terminal
+sample messages use `Observer sample` and the same identifiers/measurement names:
+`requests`/`requestsPerSecond` for Apache, `busyPercent` for CPU, `maxCpuPercent`
+for processes, and `usedPercent` for memory. `status` describes collection health,
+not an HTTP response code or an incident state. `complete` describes sample coverage.
+Unavailable log measurements are null. Payloads retain full metric-specific
+details; logs show a compact summary. Existing database rows are not rewritten;
+older on-disk queued samples are normalized when saved.
 Email delivery and systemd installation are still separate work.
 
 Local verification uses fixtures for Linux counters and bounded scans, plus

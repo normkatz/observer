@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { integer } from './config/observer.js';
 import { systemConfig, systemKinds, systemThresholds } from './config/system.js';
 import { SystemObserver } from './observers/system.js';
+import { normalizeSample, logSample } from './samples.js';
 
 export class SystemRuntime {
   constructor(config, { env = process.env, sampler } = {}) {
@@ -46,17 +47,16 @@ export class SystemRuntime {
       if (!entry?.enabled || entry.due > performance.now()) continue;
       const started = performance.now();
       const observedAt = new Date().toISOString();
-      const sample = { ...await this.sampler.sample(kind), kind, settingsCached };
+      const sample = normalizeSample(kind, { ...await this.sampler.sample(kind), settingsCached });
       // A delayed loop must not turn sparse samples into a sustained threshold breach.
       if (started - entry.due > entry.interval) entry.sequence++;
       entry.due = performance.now() + entry.interval;
       if (kind === 'processes') this.latestProcesses = { ...sample, observedAt };
       else sample.processSnapshot = this.processSnapshot();
-      const dropped = await queue.add({ key: crypto.randomUUID(), kind, runId: this.runId, sequence: ++entry.sequence,
+      const dropped = await queue.add({ key: crypto.randomUUID(), metric: kind, runId: this.runId, sequence: ++entry.sequence,
         metricId: entry.metricId, host: this.config.host, observedAt, sample, thresholds: entry.thresholds });
       if (dropped) logger.warn({ dropped }, 'Pending sample limit reached; oldest samples discarded');
-      logger.info({ metric: kind, status: sample.status, complete: sample.complete,
-        percent: sample.busyPercent ?? sample.usedPercent ?? sample.maxCpuPercent }, 'System sample');
+      logSample(logger, sample);
     }
   }
 }

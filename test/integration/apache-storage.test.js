@@ -22,6 +22,11 @@ test('Apache incidents persist across reconnects, deduplicate retries and retain
     assert.equal(await saveSample(db.pool, item(1, 10)), null);
     const second = item(2, 12);
     const opened = await saveSample(db.pool, second); assert.equal(opened.event, 'start');
+    const [stored] = await db.pool.query('SELECT payload FROM observations WHERE sample_key=?', [second.key]);
+    const payload = typeof stored.payload === 'string' ? JSON.parse(stored.payload) : stored.payload;
+    assert.equal(payload.metric, 'apache_access_log');
+    assert.equal(payload.status, 'ok');
+    assert.equal(payload.complete, true);
     assert.equal(await saveSample(db.pool, second), null);
     await db.pool.end(); db = await openDatabase({ ...process.env, DB_NAME: name });
     assert.equal(await saveSample(db.pool, item(3, 0, 'run-two')), null);

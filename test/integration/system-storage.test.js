@@ -28,10 +28,10 @@ test('system migration preserves settings; CPU/memory/process incidents persist 
     const [cpu] = await db.pool.query("SELECT active FROM metrics WHERE metric='cpu'");
     assert.equal(cpu.active, 1);
     for (const row of rows) {
-      const make = (sequence, value, runId = 'first') => ({ kind: row.metric, key: randomUUID(), sequence, runId,
+      const make = (sequence, value, runId = 'first') => ({ metric: row.metric, key: randomUUID(), sequence, runId,
         metricId: row.id, host: 'test', observedAt: new Date(Date.now() - 20000 + sequence * 1000).toISOString(),
         thresholds: systemThresholds(row.metric, {}, {}),
-        sample: { kind: row.metric, status: 'ok', complete: true, [row.metric === 'cpu' ? 'busyPercent' : row.metric === 'memory' ? 'usedPercent' : 'maxCpuPercent']: value,
+        sample: { metric: row.metric, status: 'ok', complete: true, [row.metric === 'cpu' ? 'busyPercent' : row.metric === 'memory' ? 'usedPercent' : 'maxCpuPercent']: value,
           processSnapshot: { observedAt: new Date().toISOString(), topCpu: [{ command: 'backup', pid: 42, cpuPercent: 90 }],
             topMemory: [{ command: 'backup', pid: 42, rssBytes: 104857600 }] } } });
       assert.equal(await saveSample(db.pool, make(1, 98)), null);
@@ -39,8 +39,15 @@ test('system migration preserves settings; CPU/memory/process incidents persist 
       const opened = await saveSample(db.pool, high);
       assert.equal(opened.event, 'start');
       assert.equal(await saveSample(db.pool, high), null);
+      const [stored] = await db.pool.query('SELECT payload FROM observations WHERE sample_key=?', [high.key]);
+      const payload = typeof stored.payload === 'string' ? JSON.parse(stored.payload) : stored.payload;
+      assert.equal(payload.metric, row.metric);
+      assert.equal('kind' in payload, false);
       // Restart preserves incident identity, but resets consecutive recovery samples.
-      assert.equal(await saveSample(db.pool, make(3, 1, 'second')), null);
+      const queuedLegacy = make(3, 1, 'second');
+      queuedLegacy.kind = queuedLegacy.metric; delete queuedLegacy.metric;
+      queuedLegacy.sample.kind = queuedLegacy.sample.metric; delete queuedLegacy.sample.metric;
+      assert.equal(await saveSample(db.pool, queuedLegacy), null);
       const closed = await saveSample(db.pool, make(4, 1, 'second'));
       assert.equal(closed.event, 'recovery'); assert.equal(closed.incidentId, opened.incidentId);
       assert.match(closed.summary, /backup PID 42/);
@@ -60,7 +67,7 @@ test('system migration preserves settings; CPU/memory/process incidents persist 
           MAX_SAMPLES: '1', SAMPLE_INTERVAL_SECONDS: '1', NOTIFICATIONS_ENABLED: 'false',
           OBSERVER_APACHE_ENABLED: 'false', OBSERVER_CPU_ENABLED: 'true',
           OBSERVER_PROCESSES_ENABLED: 'true', OBSERVER_MEMORY_ENABLED: 'true' } });
-      assert.match(result.stdout, /System sample/);
+      assert.match(result.stdout, /Observer sample/);
       const collected = await db.pool.query("SELECT metric_id FROM observations WHERE host='runtime-test'");
       assert.equal(collected.length, 3);
     } finally { await rm(directory, { recursive: true, force: true }); }
