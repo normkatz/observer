@@ -60,6 +60,10 @@ npm run db:status
 ```
 
 These npm commands load a project `.env` followed by `/etc/observer/.env` if present.
+The project-owned `scripts/start.mjs` launcher reports each loaded file, or an
+explicit alternate-location message when the project file is missing. It never
+prints configuration values. Unreadable files cause an error instead of being
+silently skipped. Integration tests keep their separate local-only configuration.
 Keep configuration files untracked. Grant
 the migration secret to the EC2 role only while migrations are needed, then
 remove that resource from the IAM policy if migrations are controlled manually.

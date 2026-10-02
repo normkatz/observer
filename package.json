@@ -7,13 +7,13 @@
     "node": "26.4.0"
   },
   "scripts": {
-    "db:check": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js check",
-    "db:status": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js status",
-    "db:migrate": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/storage/cli.js up",
+    "db:check": "node scripts/start.mjs check",
+    "db:status": "node scripts/start.mjs status",
+    "db:migrate": "node scripts/start.mjs up",
     "test": "node --test test/*.test.js",
     "test:integration": "node --env-file-if-exists=.env --test test/integration/*.test.js",
-    "start": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/run.js",
-    "report": "node --env-file-if-exists=.env --env-file-if-exists=/etc/observer/.env src/report.js",
+    "start": "node scripts/start.mjs start",
+    "report": "node scripts/start.mjs report",
     "burst": "node scripts/burst.mjs"
   },
   "dependencies": {
