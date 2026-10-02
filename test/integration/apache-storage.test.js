@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { openDatabase } from '../../src/storage/database.js';
 import { withMigrator } from '../../src/storage/migrations.js';
-import { saveSample, cleanup } from '../../src/storage/apache.js';
+import { saveSample } from '../../src/storage/samples.js';
+import { cleanup } from '../../src/storage/retention.js';
 import { apacheThresholds } from '../../src/config/observer.js';
 
 test('Apache incidents persist across reconnects, deduplicate retries and retain evidence', async () => {
