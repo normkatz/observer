@@ -36,7 +36,7 @@ export function observerConfig(env = process.env) {
     retentionSeconds: integer(env.OBSERVATION_RETENTION_SECONDS, 3600, 'OBSERVATION_RETENTION_SECONDS', 60, 604800),
     incidentDays: integer(env.INCIDENT_RETENTION_DAYS, 7, 'INCIDENT_RETENTION_DAYS', 1, 365),
     maxReadBytes: integer(env.APACHE_MAX_READ_BYTES, 1048576, 'APACHE_MAX_READ_BYTES', 1024, 8388608),
-    queueLimit: integer(env.PENDING_SAMPLE_LIMIT, 960, 'PENDING_SAMPLE_LIMIT', 1, 3600),
+    queueLimit: integer(env.QUEUED_SAMPLE_LIMIT, 960, 'QUEUED_SAMPLE_LIMIT', 1, 3600),
     thresholds: apacheThresholds({}, {
       request_rate: Number(env.APACHE_REQUEST_RATE_THRESHOLD ?? 5),
       recovery_rate: Number(env.APACHE_RECOVERY_RATE_THRESHOLD ?? 2),
